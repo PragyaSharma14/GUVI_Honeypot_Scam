@@ -102,8 +102,8 @@ async def validate_api_key(x_api_key: str = Header(...)):
 
 
 @app.get("/")
-async def root():
-    """Health check endpoint"""
+async def root(x_api_key: str = Header(None, alias="x-api-key")):
+    """Health check endpoint - accepts optional API key for compatibility"""
     return {
         "service": "Agentic Honey-Pot API",
         "status": "running",
