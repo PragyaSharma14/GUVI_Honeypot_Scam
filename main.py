@@ -95,10 +95,10 @@ class FinalCallback(BaseModel):
 
 
 # API Key validation
-async def validate_api_key(x_api_key: str = Header(...)):
-    if x_api_key != API_KEY:
+async def validate_api_key(api_key: str):
+    if api_key != API_KEY:
         raise HTTPException(status_code=403, detail="Invalid API Key")
-    return x_api_key
+    return api_key
 
 
 @app.get("/")
@@ -114,14 +114,23 @@ async def root(x_api_key: str = Header(None, alias="x-api-key")):
 @app.post("/api/chat", response_model=APIResponse)
 async def chat_endpoint(
     request: IncomingRequest,
-    x_api_key: str = Header(..., alias="x-api-key")
+    x_api_key: str = Header(None, alias="x-api-key"),
+    X_API_KEY: str = Header(None, alias="X-API-Key"),
+    content_type: str = Header(None, alias="content-type")
 ):
     """
     Main chat endpoint for scam detection and agent engagement
     Validates API key, processes messages, and manages scam detection workflow
+    Accepts both x-api-key and X-API-Key headers for compatibility
     """
+    # Check for API key in either header
+    api_key = x_api_key or X_API_KEY
+    
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key required")
+    
     # Validate API key
-    await validate_api_key(x_api_key)
+    await validate_api_key(api_key)
     
     try:
         session_id = request.sessionId
@@ -266,10 +275,17 @@ async def send_final_callback(session_id: str, session: Dict[str, Any]):
 @app.get("/api/sessions/{session_id}")
 async def get_session(
     session_id: str,
-    x_api_key: str = Header(..., alias="x-api-key")
+    x_api_key: str = Header(None, alias="x-api-key"),
+    X_API_KEY: str = Header(None, alias="X-API-Key")
 ):
-    """Get session details (for debugging/monitoring)"""
-    await validate_api_key(x_api_key)
+    """Get session details (for debugging/monitoring) - accepts both header formats"""
+    # Check for API key in either header
+    api_key = x_api_key or X_API_KEY
+    
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key required")
+    
+    await validate_api_key(api_key)
     
     session = session_manager.get_session(session_id)
     if not session:
