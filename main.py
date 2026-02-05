@@ -100,6 +100,20 @@ async def validate_api_key(api_key: str):
         raise HTTPException(status_code=403, detail="Invalid API Key")
     return api_key
 
+@app.post("/")
+async def guvi_entrypoint(
+    request: IncomingRequest,
+    x_api_key: str = Header(None, alias="x-api-key"),
+    X_API_KEY: str = Header(None, alias="X-API-Key"),
+    content_type: str = Header(None, alias="content-type")
+):
+    return await chat_endpoint(
+        request=request,
+        x_api_key=x_api_key,
+        X_API_KEY=X_API_KEY,
+        content_type=content_type
+    )
+
 
 @app.get("/")
 async def root(x_api_key: str = Header(None, alias="x-api-key")):
